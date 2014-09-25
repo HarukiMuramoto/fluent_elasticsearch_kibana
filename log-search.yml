@@ -1,0 +1,73 @@
+- hosts: 54.64.131.212
+  remote_user: ec2-user
+  sudo: yes
+  tasks:
+  - name: aws time setting
+    command: cp /usr/share/zoneinfo/Japan /etc/localtime
+
+  - name: aws yum update
+    command: yum update -y
+
+  - name: develop package is at the latest version
+    yum: pkg={{item}} state=installed
+    with_items:
+      - gcc
+      - gcc-c++
+      - libcurl-devel
+      - httpd
+
+  - name: ensure apache is running and enabled
+    service: name=httpd state=started enabled=yes
+
+  - name: permit apache logs
+    command: chmod +rx /var/log/httpd
+
+  - name: permit apache logs
+    command: chmod -R +r /var/log/httpd/*
+    ignore_errors: True
+
+  - name: elastic rpm download
+    command: wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.3.2.noarch.rpm
+
+  - name: elastic install
+    command: rpm -ivh elasticsearch-1.3.2.noarch.rpm
+    ignore_errors: True
+
+  - name: ensure elasticsearch is running and enabled
+    command: chkconfig --add elasticsearch
+
+  - name: ensure elasticsearch is running and enabled
+    command: /etc/init.d/elasticsearch start
+
+  - name: td_repo
+    template: src=/tmp/td.txt dest=/etc/yum.repos.d/td.repo
+
+  - name: td-agent install
+    command: yum install -y td-agent
+
+  - name: fluent-gem update
+    command: /usr/lib64/fluent/ruby/bin/fluent-gem update --no-ri --no-rdoc
+
+  - name: elastic-plugin install
+    command: /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-elasticsearch --no-ri --no-rdoc
+
+  - name: td-agent.conf rename
+    command: mv /etc/td-agent/td-agent.conf /etc/td-agent/td-agent.conf.org
+
+  - name: td-agent.conf
+    template: src=/tmp/td-agent.txt dest=/etc/td-agent/td-agent.conf
+
+  - name: td-agent start
+    command: service td-agent start
+
+  - name: td-agent auto-start
+    command: chkconfig td-agent on
+
+  - name: kibana download
+    command: wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz -P /usr/local/src/
+
+  - name: kibana tar
+    command: tar zxvf /usr/local/src/kibana-latest.tar.gz
+
+  - name: kibana contruct
+    command: mv /home/ec2-user/kibana-latest /var/www/html/kibana
