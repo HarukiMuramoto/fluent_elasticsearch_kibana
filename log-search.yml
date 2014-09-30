@@ -1,4 +1,4 @@
-- hosts: 54.64.131.212
+- hosts: 54.64.210.86
   remote_user: ec2-user
   sudo: yes
   tasks:
@@ -23,7 +23,7 @@
     command: chmod +rx /var/log/httpd
 
   - name: permit apache logs
-    command: chmod -R +r /var/log/httpd/*
+    shell: chmod -R +r /var/log/httpd/*
     ignore_errors: True
 
   - name: elastic rpm download
@@ -38,6 +38,9 @@
 
   - name: ensure elasticsearch is running and enabled
     command: /etc/init.d/elasticsearch start
+
+  - name: elasticsearch plugin install
+    command: /usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head
 
   - name: td_repo
     template: src=/tmp/td.txt dest=/etc/yum.repos.d/td.repo
